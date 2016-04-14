@@ -1,5 +1,5 @@
-//Have a look at the onboarding tutorial on the relayr Developer Dashboard:
-//   https://developer.relayr.io/documents/ESP8266_Arduino/Introduction
+//Have a look at the onboarding tutorial at the relayr Github:
+//https://github.com/relayr/ESP8266_Arduino
 
 
 //Libraries used: To be added manually on the Arduino IDE!
@@ -172,8 +172,15 @@ void handlePayload(char* payload)
   if (String(command).equals("frequency"))
   {
     int frequency = json["value"];
-    Serial.println("publishing period (ms): " + String(frequency));
-    publishingPeriod = frequency;
+    
+    if ( (frequency>=200) && (frequency<=5000) )
+    {
+      Serial.println("Adjusting publishing period (ms): " + String(frequency));
+      publishingPeriod = frequency;
+    }
+
+    else
+      Serial.println("The requested publishing period is out of the defined range!");   
   }
 }
 

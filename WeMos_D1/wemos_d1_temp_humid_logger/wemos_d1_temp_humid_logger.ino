@@ -161,7 +161,7 @@ void handlePayload(char* payload)
     }
 
     else
-      Serial.println("The publishing period is out of the defined range!");   
+      Serial.println("The requested publishing period is out of the defined range!");   
   }
 }
 

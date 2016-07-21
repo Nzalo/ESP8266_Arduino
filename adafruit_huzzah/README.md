@@ -1,11 +1,11 @@
-# Arduino Examples for the WeMos D1
+# Arduino Examples for the Adafruit HUZZAH
 
 ***IMPORTANT!***  
-*Before proceeding with any of these examples, please follow [this tutorial](https://github.com/relayr/ESP8266_Arduino), which details how to install the required tools and how to easily get started.*
+*Before proceeding with any example, please follow [this tutorial](https://github.com/relayr/ESP8266_Arduino), which details how to flash codes on your device, and explains what are the readings, the commands and the configurations, and how to work with them.*
 
 --
 
-Here you may find some code examples to quickly **connect your [WeMos D1 Mini and WeMos D1 R2](http://www.wemos.cc) to the relayr Cloud**. They are written in Wiring, the programming language popularized by Arduino. Files with the extension ".ino" are called sketches.
+Here you may find some code examples to quickly **connect your [Adafruit HUZZAH](https://www.adafruit.com/product/2471) to the relayr Cloud**. They are written in Wiring, the programming language popularized by Arduino. Files with the extension ".ino" are called sketches.
 
 These examples are highly commented, and in most cases it's enough to go through the code to understand what they do. However, here's a brief description of each of them, for your convenience.
 

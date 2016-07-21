@@ -1,38 +1,26 @@
-//Have a look at the onboarding tutorial on the relayr Developer Dashboard:
-//   https://developer.relayr.io/documents/ESP8266/Introduction
+//Have a look at the onboarding tutorial at the relayr Github:
+//https://github.com/relayr/ESP8266_Arduino
 
 
 //Libraries used: To be added manually on the Arduino IDE!
 #include <ArduinoJson.h>
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
-#include <DHT.h>
 
 
 //WiFi credentials: 2.4GHz networks only!
 //Avoid long SSIDs and passwords, and use preferably only letters and numbers
-#define SSID "relayr24"
-#define PASSWORD "wearsimaspants"
+#define SSID "INTRODUCE_YOUR_SSID_HERE"
+#define PASSWORD "INTRODUCE_YOUR_PASSWORD_HERE"
 
 
 //Credentials from the developer dashboard
-#define DEVICE_ID "3f888c05-1367-48e3-ae76-5606de4e51b0"
-#define MQTT_USER "3f888c05-1367-48e3-ae76-5606de4e51b0"
-#define MQTT_PASSWORD "Xeq-Aor0C8BN"
-#define MQTT_CLIENTID "TP4iMBRNnSOOudlYG3k5RsA" //can be anything else
-#define MQTT_TOPIC "/v1/3f888c05-1367-48e3-ae76-5606de4e51b0/"
+#define DEVICE_ID "INTRODUCE_YOUR_DEVICE_ID_HERE"
+#define MQTT_USER "INTRODUCE_YOUR_MQTT_USER_HERE"
+#define MQTT_PASSWORD "INTRODUCE_YOUR_MQTT_PASSWORD_HERE"
+#define MQTT_CLIENTID "INTRODUCE_YOUR_MQTT_CLIENT_HERE" //It can be anything else
+#define MQTT_TOPIC "INTRODUCE_YOUR_MQTT_TOPIC_HERE"
 #define MQTT_SERVER "mqtt.relayr.io"
-
-
-//This specifies the pin used for the presence sensor
-#define PRESENCE_SENSOR_PIN 0
-
-
-//This configures the sensor and creates the DHT instance
-//#define TEMP_SENSOR_PIN D4
-#define TEMP_SENSOR_PIN 4
-#define DHTTYPE DHT22 //Type 22 is recommended
-DHT dht(TEMP_SENSOR_PIN, DHTTYPE);
 
 
 //This creates the WiFi client and the pub-sub client instance
@@ -42,16 +30,19 @@ PubSubClient client(espClient);
 
 //Some definitions, including the publishing period
 const int led = BUILTIN_LED; //If the LED doesn't work, try changing "BUILTIN_LED" for "D0" or "D4"
-boolean ledState = LOW;
+int ledState = LOW;
+int analog0;
+int test_counter=0;
 unsigned long lastPublishTime = 0;
 unsigned long lastBlinkTime = 0;
-int publishingPeriod = 3000;
-float humidity, humidity_temp, temperature, temperature_temp = 0;
+int publishingPeriod = 1000;
 
 
 //Function prototypes
 void setup_wifi();
 void mqtt_connect();
+void callback(char* topic, byte* payload, unsigned int length);
+void handlePayload(char* payload);
 void publish();
 
 
@@ -59,23 +50,19 @@ void publish();
 void setup()
 {
   //Initializing pins
-  pinMode(TEMP_SENSOR_PIN, INPUT);
-  pinMode(PRESENCE_SENSOR_PIN, INPUT);
+  pinMode(A0, INPUT);
   pinMode(led, OUTPUT);
+  pinMode(D1, OUTPUT);
+  pinMode(D2, OUTPUT);
 
-  //Initializing the serial port
   Serial.begin(9600);
   Serial.println("");
   Serial.println("Hello there, I'm your ESP8266.");
   Serial.println("Let's talk to the relayr Cloud!");
-
-  //Initializing the DHT sensor
-  dht.begin();
-
-  //Initializing the WiFi and the MQTT
+  
   setup_wifi();
   client.setServer(MQTT_SERVER, 1883);
-  
+  client.setCallback(callback);
 
   //200ms is the minimum publishing period
   publishingPeriod = publishingPeriod > 200 ? publishingPeriod : 200;
@@ -91,8 +78,7 @@ void setup()
 
 void setup_wifi() {
   delay(10);
-  
-  //Trying to connect to the WiFi network
+  // We start by connecting to a WiFi network
   Serial.println("");
   Serial.print("Connecting to ");
   Serial.println(SSID);
@@ -114,6 +100,94 @@ void setup_wifi() {
 
 
 //------------------------------------------------------------------------------------//
+// Callback function, necessary for the MQTT communication                            //
+//------------------------------------------------------------------------------------//
+
+void callback(char* topic, byte* payload, unsigned int length)
+{
+  //Store the received payload and convert it to string
+  char p[length + 1];
+  memcpy(p, payload, length);
+  p[length] = NULL;
+  //Print the topic and the received payload
+  Serial.println("topic: " + String(topic));
+  Serial.println("payload: " + String(p));
+  //Call our method to parse and use the received payload
+  handlePayload(p);
+}
+
+
+
+
+//------------------------------------------------------------------------------------//
+// This processes the payload; commands and configurations should be implemented here //  
+//------------------------------------------------------------------------------------//
+
+void handlePayload(char* payload)
+{
+  StaticJsonBuffer<200> jsonBuffer;
+  //Convert payload to json
+  JsonObject& json = jsonBuffer.parseObject(payload);
+  
+  if (!json.success())
+  {
+    Serial.println("json parsing failed");
+    return;
+  }
+
+  //Get the value of the key "name", aka. listen to incoming commands and configurations
+  const char* command = json["name"];
+  Serial.println("parsed command: " + String(command));
+  
+  
+  //COMMAND "d1": We can toggle the digital output 1
+  if (String(command).equals("d1"))
+  {
+    const char* d1 = json["value"];
+    Serial.println("digital output 1: " + String(d1));
+    String s(d1);
+    
+    if (s.equals("high"))
+      digitalWrite(D1, HIGH);
+    
+    else if (s.equals("low"))
+      digitalWrite(D1, LOW);
+  }
+  
+  //COMMAND "d2": We can toggle the digital output 2
+  if (String(command).equals("d2"))
+  {
+    const char* d2 = json["value"];
+    Serial.println("digital output 2: " + String(d2));
+    String s(d2);
+    
+    if (s.equals("high"))
+      digitalWrite(D2, HIGH);
+    
+    else if (s.equals("low"))
+      digitalWrite(D2, LOW);
+  }
+  
+  //CONFIGURATION "frequency": We can change the publishing period
+  if (String(command).equals("frequency"))
+  {
+    int frequency = json["value"];
+    
+    if ( (frequency>=200) && (frequency<=5000) )
+    {
+      Serial.println("Adjusting publishing period (ms): " + String(frequency));
+      publishingPeriod = frequency;
+    }
+
+    else
+      Serial.println("The requested publishing period is out of the defined range!");   
+  }
+}
+
+
+
+
+//------------------------------------------------------------------------------------//
 // This function establishes the connection with the MQTT server                      //
 //------------------------------------------------------------------------------------//
 
@@ -124,7 +198,11 @@ void mqtt_connect()
   
   if (client.connect(MQTT_CLIENTID, MQTT_USER, MQTT_PASSWORD))
   {
-    Serial.println("Connection successful!");
+    Serial.println("Connection successful! Subscribing to topic...");
+    //Subscribing to the topic "cmd", so we can listen to commands
+    client.subscribe("/v1/"DEVICE_ID"/cmd");
+    //And to "config" as well, for the configurations
+    client.subscribe("/v1/"DEVICE_ID"/config");
   }
 
   else
@@ -173,6 +251,10 @@ void blink(int interval)
 
 void loop()
 {
+  //When counter reaches the maximum specified in the default model, it's reset
+  if(test_counter == 32767)
+    test_counter = 0;
+    
   //If we're connected, we can send data...
   if (client.connected())
   {
@@ -181,27 +263,6 @@ void loop()
         if (millis() - lastPublishTime > publishingPeriod)
         {
             lastPublishTime = millis();
-
-            //Acquiring values from the sensors in temporary variables
-            humidity_temp = dht.readHumidity();
-            temperature_temp = dht.readTemperature();
-
-            //If the routine fails, it'll let us know, and it will ignore the readings
-            if (isnan(humidity_temp) || isnan(temperature_temp))
-            {
-              Serial.println("Failed to read from the DHT sensor!");
-            }
-
-            //If it works, we will take the values as valid
-            else
-            {
-              humidity = humidity_temp;
-              temperature = temperature_temp;
-            }
-              
-            //The DHTxx are relatively slow sensors, we have to wait a bit between readings
-            //3000ms = 3s by default
-            
             //Publishing...
             publish();
         }
@@ -220,6 +281,10 @@ void loop()
   //since it allows the ESP8266 background functions to be executed
   //(WiFi, TCP/IP stack, etc.)
   yield();
+
+  //Read the value of the ADC (analog input 0); it's send in the function below
+  analog0 = analogRead(A0);
+  
 }
 
 
@@ -233,33 +298,27 @@ void publish()
 {    
   //MQTT_MAX_PACKET_SIZE is defined in "PubSubClient.h", it's 128 bytes by default
   //A modified version with 512 bytes it's available here:
-  //https://github.com/uberdriven/pubsubclient
+  //   https://github.com/uberdriven/pubsubclient
   StaticJsonBuffer<MQTT_MAX_PACKET_SIZE> pubJsonBuffer;
   //Create our JsonArray
   JsonArray& root = pubJsonBuffer.createArray();
 
 //-------------------------------------------------
-  //First object: temperature
+  //First object: analog input 0
   JsonObject& leaf1 = root.createNestedObject();
-  leaf1["meaning"] = "temperature";
-  leaf1["value"] = temperature;
+  //This is how we name what we are sending
+  leaf1["meaning"] = "analog0";
+  //This contains the readings of the port
+  leaf1["value"] = analog0;
 //-------------------------------------------------
   
 //-------------------------------------------------  
-  //Second object: humidity
+  //Second object: test counter (+1 for every sent message)
   JsonObject& leaf2 = root.createNestedObject();
-  leaf2["meaning"] = "humidity";
-  leaf2["value"] = humidity;
-//-------------------------------------------------
-
-//-------------------------------------------------  
-  //Third object: presence
-  JsonObject& leaf3 = root.createNestedObject();
-  leaf3["meaning"] = "presence";
-    if(digitalRead(PRESENCE_SENSOR_PIN) == HIGH)
-      leaf3["value"] = true;
-    else
-      leaf3["value"] = false;
+  //This is how we name what we are sending
+  leaf2["meaning"] = "test_counter";
+  //This contains the value of the counter (increased with every iteration)
+  leaf2["value"] = test_counter++;
 //-------------------------------------------------
   
   char message_buff[MQTT_MAX_PACKET_SIZE];
@@ -267,4 +326,6 @@ void publish()
   client.publish("/v1/"DEVICE_ID"/data", message_buff);
   Serial.println("Publishing " + String(message_buff));
 }
+
+
 

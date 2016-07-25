@@ -1,5 +1,6 @@
-//Have a look at the onboarding tutorial on the relayr Developer Dashboard:
-//   https://developer.relayr.io/documents/ESP8266/Introduction
+
+//Have a look at the onboarding tutorial at the relayr Github:
+//https://github.com/relayr/ESP8266_Arduino
 
 
 //Libraries used: To be added manually on the Arduino IDE!
@@ -16,22 +17,21 @@
 
 
 //Credentials from the developer dashboard
-#define DEVICE_ID "3f888c05-1367-48e3-ae76-5606de4e51b0"
-#define MQTT_USER "3f888c05-1367-48e3-ae76-5606de4e51b0"
-#define MQTT_PASSWORD "Xeq-Aor0C8BN"
-#define MQTT_CLIENTID "TP4iMBRNnSOOudlYG3k5RsA" //can be anything else
-#define MQTT_TOPIC "/v1/3f888c05-1367-48e3-ae76-5606de4e51b0/"
+#define DEVICE_ID "INTRODUCE_YOUR_DEVICE_ID_HERE"
+#define MQTT_USER "INTRODUCE_YOUR_MQTT_USER_HERE"
+#define MQTT_PASSWORD "INTRODUCE_YOUR_MQTT_PASSWORD_HERE"
+#define MQTT_CLIENTID "INTRODUCE_YOUR_MQTT_CLIENT_HERE" //It can be anything else
+#define MQTT_TOPIC "INTRODUCE_YOUR_MQTT_TOPIC_HERE"
 #define MQTT_SERVER "mqtt.relayr.io"
 
 
 //This specifies the pin used for the presence sensor
-#define PRESENCE_SENSOR_PIN 0
+#define PRESENCE_SENSOR_PIN D0
 
 
 //This configures the sensor and creates the DHT instance
-//#define TEMP_SENSOR_PIN D4
-#define TEMP_SENSOR_PIN 4
-#define DHTTYPE DHT22 //Type 22 is recommended
+#define TEMP_SENSOR_PIN D4
+#define DHTTYPE DHT11 //Type 22 is recommended
 DHT dht(TEMP_SENSOR_PIN, DHTTYPE);
 
 
@@ -198,9 +198,6 @@ void loop()
               humidity = humidity_temp;
               temperature = temperature_temp;
             }
-              
-            //The DHTxx are relatively slow sensors, we have to wait a bit between readings
-            //3000ms = 3s by default
             
             //Publishing...
             publish();

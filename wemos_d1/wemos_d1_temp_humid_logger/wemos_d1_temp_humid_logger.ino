@@ -41,7 +41,7 @@ const int led = BUILTIN_LED; //If the LED doesn't work, try changing "BUILTIN_LE
 boolean ledState = LOW;
 unsigned long lastPublishTime = 0;
 unsigned long lastBlinkTime = 0;
-int publishingPeriod = 2000;
+int publishingPeriod = 3000; //The DHT is a pretty slow sensor!
 float humidity, temperature;
 
 
@@ -239,8 +239,17 @@ void loop()
     //Publish within the defined publishing period
         if (millis() - lastPublishTime > publishingPeriod)
         {
+            //Time to publish, as defined by the publishing period
+            //Let's update the values of the sensor first...
+            humidity = dht.readHumidity();
+            temperature = dht.readTemperature();
+            //If the routine fails, it'll let us know
+            if (isnan(humidity) || isnan(temperature))
+              Serial.println("Failed to read from the DHT sensor!");
+           
+            //Then update the last publish time...
             lastPublishTime = millis();
-            //Publishing...
+            //And finally, publish the payload...
             publish();
         }
         //Blink LED  
@@ -258,20 +267,6 @@ void loop()
   //since it allows the ESP8266 background functions to be executed
   //(WiFi, TCP/IP stack, etc.)
   yield();
-
-  //Acquiring values from the sensor
-  humidity = dht.readHumidity();
-  temperature = dht.readTemperature();
-
-  //If the routine fails, it'll let us know 
-  if (isnan(humidity) || isnan(temperature))
-  {
-    Serial.println("Failed to read from the DHT sensor!");
-  }
-
-  //DHTxx are relatively slow sensors, we have to wait a bit between readings
-  //2000ms = 2s by default
-  delay(publishingPeriod);
 }
 
 

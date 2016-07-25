@@ -1,3 +1,4 @@
+
 //Have a look at the onboarding tutorial at the relayr Github:
 //https://github.com/relayr/ESP8266_Arduino
 
@@ -262,8 +263,12 @@ void loop()
     //Publish within the defined publishing period
         if (millis() - lastPublishTime > publishingPeriod)
         {
+            //Time to publish, as defined by the publishing period
+            //Let's update the value of the ADC (analog input 0) first, since it will be published...
+            analog0 = analogRead(A0);
+            //Then update the last publish time...
             lastPublishTime = millis();
-            //Publishing...
+            //And finally, publish the payload...
             publish();
         }
         //Blink LED  
@@ -281,10 +286,6 @@ void loop()
   //since it allows the ESP8266 background functions to be executed
   //(WiFi, TCP/IP stack, etc.)
   yield();
-
-  //Read the value of the ADC (analog input 0); it's send in the function below
-  analog0 = analogRead(A0);
-  
 }
 
 
